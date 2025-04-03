@@ -1,6 +1,4 @@
 package com.inwi.KpiDashboardAuth.config;
-
-import ch.qos.logback.core.encoder.EchoEncoder;
 import com.inwi.KpiDashboardAuth.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
