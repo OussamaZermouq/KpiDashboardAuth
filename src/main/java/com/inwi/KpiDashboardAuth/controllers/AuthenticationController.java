@@ -12,7 +12,7 @@ import com.inwi.KpiDashboardAuth.model.User;
 import com.inwi.KpiDashboardAuth.service.AuthenticationService;
 import com.inwi.KpiDashboardAuth.service.JwtService;
 
-@RequestMapping("/auth")
+@RequestMapping("api/v1/auth")
 @RestController
 public class AuthenticationController {
     private final JwtService jwtService;
@@ -27,7 +27,6 @@ public class AuthenticationController {
     @PostMapping("/signup")
     public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
         User registeredUser = authenticationService.signup(registerUserDto);
-
         return ResponseEntity.ok(registeredUser);
     }
 
