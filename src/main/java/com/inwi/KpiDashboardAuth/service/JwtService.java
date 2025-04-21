@@ -34,22 +34,25 @@ public class JwtService {
     }
 
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+    public String generateToken(UserDetails userDetails, String userRole) {
+        return generateToken(new HashMap<>(), userDetails, userRole);
     }
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails){
-        return buildToken(extraClaims, userDetails, jwtExpiration);
+    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails, String userRole){
+        return buildToken(extraClaims, userDetails, jwtExpiration, userRole);
     }
 
     public long getExpirationTime(){
         return jwtExpiration;
     }
 
-    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, Long jwtExpiration){
+    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, Long jwtExpiration, String userRole){
+        Map<String, String> role = new HashMap<String, String>();
+        role.put("role",userRole);
         return Jwts.
                 builder().
                 setClaims(extraClaims).
+                setClaims(role).
                 setSubject(userDetails.getUsername()).
                 setIssuedAt(new Date(System.currentTimeMillis())).
                 setExpiration(new Date(System.currentTimeMillis()+jwtExpiration)).

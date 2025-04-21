@@ -29,24 +29,22 @@ public class SecurityConfiguration {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+
+    //refracted this function
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println("ADASDADADADA");
-        http.csrf()
-                .disable()
-                .authorizeHttpRequests()
-                .requestMatchers("/api/v1/auth/**")
-                .permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/demande/")
-                .permitAll()
-                .anyRequest()
-                .authenticated()
-                .and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.csrf((csrf) -> {
+                    csrf.disable();
+                })
+                .authorizeHttpRequests((authorization) -> {
+                    authorization.requestMatchers("/api/v1/auth/**").permitAll();
+                    authorization.anyRequest().authenticated();
+                }).
+                sessionManagement((session) -> {
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                }).
+                authenticationProvider(authenticationProvider).
+                addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

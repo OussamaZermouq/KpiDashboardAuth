@@ -1,6 +1,11 @@
 package com.inwi.KpiDashboardAuth.controllers;
 
+import com.inwi.KpiDashboardAuth.dtos.TokenValidationRequestDto;
+import com.inwi.KpiDashboardAuth.responses.Response;
+import com.inwi.KpiDashboardAuth.service.Implementation.UserServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +21,8 @@ import com.inwi.KpiDashboardAuth.service.JwtService;
 @RestController
 public class AuthenticationController {
     private final JwtService jwtService;
-    
+    @Autowired
+    private UserServiceImpl userService;
     private final AuthenticationService authenticationService;
 
     public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
@@ -25,21 +31,31 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
-        User registeredUser = authenticationService.signup(registerUserDto);
-        return ResponseEntity.ok(registeredUser);
+    public ResponseEntity<Response<String>> register(@RequestBody RegisterUserDto registerUserDto) {
+        Response<String> response = authenticationService.signup(registerUserDto);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
+    public ResponseEntity<?> authenticate(@RequestBody LoginUserDto loginUserDto) {
         User authenticatedUser = authenticationService.authenticate(loginUserDto);
+        if (authenticatedUser == null){
+            return ResponseEntity.notFound().build();
+        }
 
-        String jwtToken = jwtService.generateToken(authenticatedUser);
+        String jwtToken = jwtService.generateToken(authenticatedUser, authenticatedUser.getRole().name());
 
         LoginResponse loginResponse = new LoginResponse();
         loginResponse.setToken(jwtToken);
         loginResponse.setExpiresIn(jwtService.getExpirationTime());
 
         return ResponseEntity.ok(loginResponse);
+    }
+
+    @PostMapping("/validate-token")
+    public ResponseEntity<Response<Boolean>> validateToken(@RequestBody TokenValidationRequestDto tokenValidationRequestDto){
+        String userEmail = jwtService.extractUsername(tokenValidationRequestDto.getToken());
+        UserDetails userDetails = userService.findByUsername(userEmail);
+        return ResponseEntity.ok().body(new Response<>(200,jwtService.isTokenValid(tokenValidationRequestDto.getToken(), userDetails)));
     }
 }

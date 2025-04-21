@@ -2,22 +2,24 @@ package com.inwi.KpiDashboardAuth.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+
 
 @Table(name = "users")
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -34,11 +36,14 @@ public class User implements UserDetails {
     @UpdateTimestamp
     @Column(updatable = false, name = "updated_at")
     private Date updatedAt;
+    @Enumerated(EnumType.ORDINAL)
+    private ROLE role;
 
+    private boolean enabled;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(new SimpleGrantedAuthority(role.name()));
     }
     @Override
     public String getUsername() {
