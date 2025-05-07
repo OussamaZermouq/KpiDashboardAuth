@@ -1,10 +1,8 @@
 package com.inwi.KpiDashboardAuth.model;
 
+import com.inwi.KpiDashboardAuth.User.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -34,16 +32,15 @@ public class User implements UserDetails {
     @Column(updatable = false, name = "created_at")
     private Date createdAt;
     @UpdateTimestamp
-    @Column(updatable = false, name = "updated_at")
+    @Column(name = "updated_at")
     private Date updatedAt;
-    @Enumerated(EnumType.ORDINAL)
-    private ROLE role;
-
+    @Enumerated(EnumType.STRING)
+    private Role role;
     private boolean enabled;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        return role.getAuthorities();
     }
     @Override
     public String getUsername() {
@@ -67,6 +64,10 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
+    }
+
+    public void setIsEnabled(boolean isEnabled){
+        enabled = isEnabled;
     }
 }

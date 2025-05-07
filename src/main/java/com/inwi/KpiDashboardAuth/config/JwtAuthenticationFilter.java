@@ -1,4 +1,5 @@
 package com.inwi.KpiDashboardAuth.config;
+import com.inwi.KpiDashboardAuth.exceptions.NonValidTokenException;
 import com.inwi.KpiDashboardAuth.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -56,6 +57,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
+                else{
+                    throw new NonValidTokenException("TOKEN IS NOT VALID OR EXPIRED");
+                }
+
             }
 
             filterChain.doFilter(request, response);

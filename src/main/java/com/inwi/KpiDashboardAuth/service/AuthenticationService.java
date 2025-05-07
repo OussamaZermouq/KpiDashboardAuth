@@ -1,5 +1,7 @@
 package com.inwi.KpiDashboardAuth.service;
-import com.inwi.KpiDashboardAuth.model.ROLE;
+import com.inwi.KpiDashboardAuth.exceptions.UserNotEnabledException;
+import com.inwi.KpiDashboardAuth.exceptions.UserNotFoundException;
+import com.inwi.KpiDashboardAuth.User.Role;
 import com.inwi.KpiDashboardAuth.responses.Response;
 import org.passay.CharacterData;
 import org.passay.CharacterRule;
@@ -36,54 +38,24 @@ public class AuthenticationService {
         this.passwordEncoder = passwordEncoder;
     }
 
-
-    public String generatePassword() {
-        PasswordGenerator gen = new PasswordGenerator();
-        CharacterData lowerCaseChars = EnglishCharacterData.LowerCase;
-        CharacterRule lowerCaseRule = new CharacterRule(lowerCaseChars);
-        lowerCaseRule.setNumberOfCharacters(2);
-
-        CharacterData upperCaseChars = EnglishCharacterData.UpperCase;
-        CharacterRule upperCaseRule = new CharacterRule(upperCaseChars);
-        upperCaseRule.setNumberOfCharacters(2);
-
-        CharacterData digitChars = EnglishCharacterData.Digit;
-        CharacterRule digitRule = new CharacterRule(digitChars);
-        digitRule.setNumberOfCharacters(2);
-
-        CharacterData specialChars = new CharacterData() {
-            public String getErrorCode() {
-                return ERROR_CODE;
-            }
-            public String getCharacters() {
-                return "!@#$%^&*()_+";
-            }
-        };
-        CharacterRule splCharRule = new CharacterRule(specialChars);
-        splCharRule.setNumberOfCharacters(2);
-
-        String password = gen.generatePassword(12, splCharRule, lowerCaseRule,
-                upperCaseRule, digitRule);
-        return password;
-    }
-
     public Response<String> signup(RegisterUserDto input) {
-
         var user = User.builder().
                 firstName(input.getFirstName()).
                 lastName(input.getLastName()).
                 email(input.getEmail()).
                 password(passwordEncoder.encode(input.getPassword())).
-                role(ROLE.USER).
+                role(Role.USER).
                 enabled(false).
                 build();
         userRepository.save(user);
         return new Response<>(200, "User has been created successfully");
     }
 
-    public User authenticate(LoginUserDto input) {
+    public User authenticate(LoginUserDto input) throws UserNotFoundException, UserNotEnabledException {
         Optional<User> userOptional = userRepository.findByEmail(input.getEmail());
         if(userOptional.isPresent()){
+            if (userOptional.get().isEnabled()){
+
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             input.getEmail(),
@@ -93,7 +65,9 @@ public class AuthenticationService {
 
             return userRepository.findByEmail(input.getEmail())
                     .orElseThrow();
+            }
+            throw new UserNotEnabledException("USER NOT ALLOWED");
         }
-        return null;
+        throw new UserNotFoundException("USER NOT FOUND");
     }
 }

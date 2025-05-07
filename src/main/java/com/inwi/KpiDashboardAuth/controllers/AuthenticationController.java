@@ -1,9 +1,12 @@
 package com.inwi.KpiDashboardAuth.controllers;
 
 import com.inwi.KpiDashboardAuth.dtos.TokenValidationRequestDto;
+import com.inwi.KpiDashboardAuth.exceptions.UserNotEnabledException;
+import com.inwi.KpiDashboardAuth.exceptions.UserNotFoundException;
 import com.inwi.KpiDashboardAuth.responses.Response;
 import com.inwi.KpiDashboardAuth.service.Implementation.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,24 +41,35 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticate(@RequestBody LoginUserDto loginUserDto) {
-        User authenticatedUser = authenticationService.authenticate(loginUserDto);
-        if (authenticatedUser == null){
-            return ResponseEntity.notFound().build();
-        }
-
-        String jwtToken = jwtService.generateToken(authenticatedUser, authenticatedUser.getRole().name());
-
         LoginResponse loginResponse = new LoginResponse();
-        loginResponse.setToken(jwtToken);
-        loginResponse.setExpiresIn(jwtService.getExpirationTime());
+        try {
+            User authenticatedUser = authenticationService.authenticate(loginUserDto);
 
+            if (authenticatedUser == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            String jwtToken = jwtService.generateToken(authenticatedUser, authenticatedUser.getRole().name());
+
+            loginResponse.setToken(jwtToken);
+            loginResponse.setExpiresIn(jwtService.getExpirationTime());
+
+        } catch (Exception e) {
+            if (e instanceof UserNotFoundException) {
+                return ResponseEntity.notFound().build();
+
+            } else if (e instanceof UserNotEnabledException) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new Response<>(401, "ACCOUNT NOT ENABLED"));
+            }
+        }
         return ResponseEntity.ok(loginResponse);
     }
 
+
     @PostMapping("/validate-token")
-    public ResponseEntity<Response<Boolean>> validateToken(@RequestBody TokenValidationRequestDto tokenValidationRequestDto){
+    public ResponseEntity<Response<Boolean>> validateToken(@RequestBody TokenValidationRequestDto tokenValidationRequestDto) {
         String userEmail = jwtService.extractUsername(tokenValidationRequestDto.getToken());
         UserDetails userDetails = userService.findByUsername(userEmail);
-        return ResponseEntity.ok().body(new Response<>(200,jwtService.isTokenValid(tokenValidationRequestDto.getToken(), userDetails)));
+        return ResponseEntity.ok().body(new Response<>(200, jwtService.isTokenValid(tokenValidationRequestDto.getToken(), userDetails)));
     }
 }

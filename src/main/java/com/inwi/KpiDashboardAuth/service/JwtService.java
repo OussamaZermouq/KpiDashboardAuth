@@ -1,5 +1,6 @@
 package com.inwi.KpiDashboardAuth.service;
 
+import com.inwi.KpiDashboardAuth.exceptions.NonValidTokenException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
