@@ -54,15 +54,18 @@ public class AuthenticationController {
             loginResponse.setToken(jwtToken);
             loginResponse.setExpiresIn(jwtService.getExpirationTime());
 
+            return ResponseEntity.ok(loginResponse);
+
+
         } catch (Exception e) {
             if (e instanceof UserNotFoundException) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
             } else if (e instanceof UserNotEnabledException) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new Response<>(401, "ACCOUNT NOT ENABLED"));
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new Response<>(403, "ACCOUNT NOT ENABLED"));
             }
         }
-        return ResponseEntity.ok(loginResponse);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
 
