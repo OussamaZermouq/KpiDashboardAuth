@@ -35,6 +35,7 @@ public class UserServiceImpl implements UserService {
         List<UserDto> userDtoList = new ArrayList<>();
         userRepository.findAll().forEach((user -> {
             userDtoList.add(UserDto.builder().
+                    userId(user.getId()).
                     firstName(user.getFirstName()).
                     lastName(user.getLastName()).
                     email(user.getEmail()).
