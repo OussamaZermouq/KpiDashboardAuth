@@ -1,12 +1,14 @@
 package com.inwi.KpiDashboardAuth.config;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inwi.KpiDashboardAuth.exceptions.NonValidTokenException;
+import com.inwi.KpiDashboardAuth.responses.AuthenticationErrorResponse;
 import com.inwi.KpiDashboardAuth.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,11 +22,24 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import java.io.IOException;
 
 @Component
-@AllArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final ObjectMapper objectMapper;
+
+    public JwtAuthenticationFilter(
+            HandlerExceptionResolver handlerExceptionResolver,
+            JwtService jwtService,
+            UserDetailsService userDetailsService,
+            ObjectMapper objectMapper
+    ) {
+        this.handlerExceptionResolver = handlerExceptionResolver;
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
+        this.objectMapper = objectMapper;
+    }
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -56,16 +71,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    handleAuthenticationError(response, "Token is invalid or expired", "Unauthorized");
+                    return;
                 }
-                else{
-                    throw new NonValidTokenException("TOKEN IS NOT VALID OR EXPIRED");
-                }
-
             }
 
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
-            handlerExceptionResolver.resolveException(request, response, null, exception);
+            handleAuthenticationError(response, exception.getMessage(), "Unauthorized");
         }
+    }
+
+    private void handleAuthenticationError(HttpServletResponse response, String message, String error) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        
+        AuthenticationErrorResponse errorResponse = AuthenticationErrorResponse.builder()
+                .status(HttpServletResponse.SC_UNAUTHORIZED)
+                .message(message)
+                .error(error)
+                .build();
+
+        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
 }

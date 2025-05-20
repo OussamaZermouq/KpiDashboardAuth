@@ -1,5 +1,6 @@
 package com.inwi.KpiDashboardAuth.service.Interface;
 
+import com.inwi.KpiDashboardAuth.dtos.CreateUserRequestDto;
 import com.inwi.KpiDashboardAuth.dtos.UpdateUserRequestDto;
 import com.inwi.KpiDashboardAuth.dtos.UserDto;
 import com.inwi.KpiDashboardAuth.exceptions.BadRequestException;
@@ -16,4 +17,8 @@ public interface UserService {
     void updateUserStatus(String email);
 
     void updateUser(UpdateUserRequestDto updateUserRequestDto, Integer userId) throws BadRequestException;
+
+    void createUser(CreateUserRequestDto createUserRequestDto) throws BadRequestException;
+
+    void deleteUser(Integer userId) throws BadRequestException;
 }

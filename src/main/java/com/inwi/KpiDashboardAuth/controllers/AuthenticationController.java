@@ -1,10 +1,16 @@
 package com.inwi.KpiDashboardAuth.controllers;
 
+import com.inwi.KpiDashboardAuth.Dto.RefreshTokenRequestDto;
 import com.inwi.KpiDashboardAuth.dtos.TokenValidationRequestDto;
+import com.inwi.KpiDashboardAuth.exceptions.BadRequestException;
+import com.inwi.KpiDashboardAuth.exceptions.InvalidTokenException;
 import com.inwi.KpiDashboardAuth.exceptions.UserNotEnabledException;
 import com.inwi.KpiDashboardAuth.exceptions.UserNotFoundException;
+import com.inwi.KpiDashboardAuth.responses.AuthenticationResponse;
 import com.inwi.KpiDashboardAuth.responses.Response;
 import com.inwi.KpiDashboardAuth.service.Implementation.UserServiceImpl;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,20 +47,14 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticate(@RequestBody LoginUserDto loginUserDto) {
-        LoginResponse loginResponse = new LoginResponse();
         try {
-            User authenticatedUser = authenticationService.authenticate(loginUserDto);
+            AuthenticationResponse authenticationResponse = authenticationService.authenticate(loginUserDto);
 
-            if (authenticatedUser == null) {
+            if (authenticationResponse == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            String jwtToken = jwtService.generateToken(authenticatedUser, authenticatedUser.getRole().name());
-
-            loginResponse.setToken(jwtToken);
-            loginResponse.setExpiresIn(jwtService.getExpirationTime());
-
-            return ResponseEntity.ok(loginResponse);
+            return ResponseEntity.ok(authenticationResponse);
 
 
         } catch (Exception e) {
@@ -74,5 +74,23 @@ public class AuthenticationController {
         String userEmail = jwtService.extractUsername(tokenValidationRequestDto.getToken());
         UserDetails userDetails = userService.findByUsername(userEmail);
         return ResponseEntity.ok().body(new Response<>(200, jwtService.isTokenValid(tokenValidationRequestDto.getToken(), userDetails)));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequestDto refreshTokenRequestDto) {
+        try {
+            AuthenticationResponse authResponse = authenticationService.refreshToken(refreshTokenRequestDto.getRefreshToken().substring(7));
+            return ResponseEntity.ok(authResponse);
+        }
+        catch (UserNotFoundException | InvalidTokenException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new Response<>(401, "Invalid token"));
+        }
+        catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response<>(400, "Bad request"));
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response<>(500, "An error has occurred"));
+        }
     }
 }
