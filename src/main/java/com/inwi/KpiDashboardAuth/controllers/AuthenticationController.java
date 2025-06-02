@@ -70,10 +70,18 @@ public class AuthenticationController {
 
 
     @PostMapping("/validate-token")
-    public ResponseEntity<Response<Boolean>> validateToken(@RequestBody TokenValidationRequestDto tokenValidationRequestDto) {
-        String userEmail = jwtService.extractUsername(tokenValidationRequestDto.getToken());
-        UserDetails userDetails = userService.findByUsername(userEmail);
-        return ResponseEntity.ok().body(new Response<>(200, jwtService.isTokenValid(tokenValidationRequestDto.getToken(), userDetails)));
+    public ResponseEntity<Response<?>> validateToken(@RequestBody TokenValidationRequestDto tokenValidationRequestDto) {
+        System.out.println(tokenValidationRequestDto.getToken());
+
+        try{
+            String userEmail = jwtService.extractUsername(tokenValidationRequestDto.getToken().substring(7));
+            UserDetails userDetails = userService.findByUsername(userEmail);
+            Boolean isTokenValid = jwtService.isTokenValid(tokenValidationRequestDto.getToken().substring(7), userDetails);
+            return ResponseEntity.ok().body(new Response<>(200, isTokenValid));
+        }
+        catch (Exception e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new Response<>(401,"Token is invalid or expired"));
+        }
     }
 
     @PostMapping("/refresh")
