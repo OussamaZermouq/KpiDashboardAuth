@@ -71,7 +71,6 @@ public class AuthenticationController {
 
     @PostMapping("/validate-token")
     public ResponseEntity<Response<?>> validateToken(@RequestBody TokenValidationRequestDto tokenValidationRequestDto) {
-        System.out.println(tokenValidationRequestDto.getToken());
 
         try{
             String userEmail = jwtService.extractUsername(tokenValidationRequestDto.getToken().substring(7));
